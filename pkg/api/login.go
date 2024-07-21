@@ -5,23 +5,31 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 )
 
-var store = sessions.NewCookieStore([]byte("SESSION_KEY"))
+var store *sessions.CookieStore
 
 type User struct {
 	Id int
 }
 
 func SessionInit() {
+	authKeyOne := securecookie.GenerateRandomKey(64)
+	encryptionKeyOne := securecookie.GenerateRandomKey(32)
+	store = sessions.NewCookieStore(authKeyOne, encryptionKeyOne)
+
+	store.Options = &sessions.Options{
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+	}
+
 	gob.Register(User{})
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session")
-	session.Options.Path = "/"
-	session.Options.SameSite = http.SameSiteLaxMode
 	session.Values["user"] = User{
 		Id: 0,
 	}
@@ -33,7 +41,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
