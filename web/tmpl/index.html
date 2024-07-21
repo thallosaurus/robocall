@@ -4,6 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        #extlist li.loading {
+            color: red;
+        }
+    </style>
+    <script>
+        window.onload = () => {
+            
+            const tmp_exts = new Map();
+            const extform = document.querySelector("#createExtension")
+            const upload = document.querySelector("#fileUpload")
+            upload.addEventListener("change", f => {
+                const ext = document.querySelector("#extlist");
+                    for (g of f.target.files) {
+                        const li = document.createElement("li")
+                        //elem.classList.add("")
+
+                        //li.innerText = g.name
+                        li.classList.add("loading")
+
+                        const p = document.createElement("p")
+                        p.innerText = g.name
+
+                        const btn = document.createElement("input")
+                        btn.type = "button"
+                        btn.innerText = "X"
+                        btn.dataset.id = g.name
+                        btn.addEventListener("click", (r) => {
+                            tmp_exts.delete(btn.dataset.id)
+                            ext.removeChild(li)
+                        })
+                        
+                        li.appendChild(p)
+
+                        const reader = new FileReader();
+                        reader.addEventListener("loadend", (v) => {
+                            //tmp_exts[g.name] = reader.result
+                            tmp_exts.set(g.name, reader.result)
+                            /*const input = document.createElement("input")
+                            input.type = "hidden"
+                            input.name = "file[]"
+                            input.value = Uint8Array.from(reader.result)*/
+
+                            li.classList.remove("loading")
+                        })
+                        reader.readAsArrayBuffer(g)
+
+                        ext.appendChild(li)
+                    }
+                })
+
+            extform.addEventListener("submit", (f) => {
+                f.preventDefault()
+                let data = new FormData();
+                data.append("extension_name", f)
+                for (i of tmp_exts.entries()) {
+                    console.log(i)
+                    data.append(i[0], i[1])
+                }
+            })
+        }
+    </script>
 </head>
 <body>
     <h1>RoboCall v1</h1>
@@ -22,22 +84,33 @@
     </form>
 
     <h2>Extensions</h2>
-    <form>
+    <form action="/api/set-extension" method="POST">
+
         <fieldset {{if not .ExtConfig }}disabled{{end}}>
             <legend>Selected Extension</legend>
             <select>
                 {{if .ExtConfig }}
-                    {{ range $e := .Ext }}
-                    <option>Option</option>
-                    {{end}}
+                {{ range $e := .Ext }}
+                <option>Option</option>
+                {{end}}
+                {{else}}
+                <option selected>-- no extensions available --</option>
                 {{end}}
             </select>
-            <input type="select">
+            <input type="submit">
         </fieldset>
-
+    </form>
+    
+    <form action="/api/create-extension" method="POST" id="createExtension">
         <fieldset>
-            <legend>Upload Extension</legend>
+            <legend>Create Extension</legend>
+            <label for="name">Extension Name</label>
+            <input name="name">
+            <ol id="extlist">
+                
+            </ol>
             <input type="file" id="fileUpload">
+            <input type="submit">
         </fieldset>
     </form>
 </body>
