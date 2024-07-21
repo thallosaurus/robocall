@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>RoboCall v1</h1>
+
+    <h2>Userconfig</h2>
+    <form action="/api/user-config" method="POST">
+        <label for="gateway-host">Gateway Host</label>
+        <input type="text" name="gateway-host" value="{{ .Sip.Host }}" required>
+
+        <label for="username">Username</label>
+        <input type="text" name="username" value="{{ .Sip.Username }}" required>
+
+        <label for="password">Password</label>
+        <input type="password" name="password" required>
+        <input type="submit">
+    </form>
+
+    <h2>Extensions</h2>
+    <form>
+        <fieldset {{if not .ExtConfig }}disabled{{end}}>
+            <legend>Selected Extension</legend>
+            <select>
+                {{if .ExtConfig }}
+                    {{ range $e := .Ext }}
+                    <option>Option</option>
+                    {{end}}
+                {{end}}
+            </select>
+            <input type="select">
+        </fieldset>
+
+        <fieldset>
+            <legend>Upload Extension</legend>
+            <input type="file" id="fileUpload">
+        </fieldset>
+    </form>
+</body>
+</html>

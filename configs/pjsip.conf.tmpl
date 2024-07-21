@@ -1,0 +1,39 @@
+[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0
+
+[{{ .Name }}]
+type=registration
+retry_interval=10
+max_retries=3
+expiration=3600
+transport=transport-udp
+outbound_auth={{ .Name }}_auth
+client_uri=sip:{{ .Username }}@{{ .Host }}
+server_uri=sip:{{ .Host }}
+
+[{{ .Name }}_auth]
+type=auth
+username={{ .Username }}
+password={{ .Password }}
+
+[{{ .Name }}_in]
+type=endpoint
+transport=transport-udp
+context={{ .SelectedContext }}
+outbound_auth={{ .Name }}_auth
+disallow=all
+allow=g722
+allow=alaw
+direct_media=no
+aors={{ .Name }}_aor
+
+[{{ .Name }}_id]
+type=identify
+endpoint={{ .Name }}_in
+match=0.0.0.0/24
+
+[{{ .Name }}_aor]
+type=aor
+max_contacts=1
