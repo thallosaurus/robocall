@@ -33,6 +33,7 @@ func main() {
 		Password: "test",
 		Host:     "test",
 	}*/
+	api.SessionInit()
 
 	cnf := conf.FromDefaultFile()
 
@@ -43,6 +44,10 @@ func main() {
 	root.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		serveHome(w, r, &cnf)
 	}).Methods("GET")
+
+	root.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		api.Login(w, r)
+	})
 
 	api.Router(root.PathPrefix("/api").Subrouter(), &cnf)
 	fmt.Println("Listening on port 8080")

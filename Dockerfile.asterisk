@@ -19,6 +19,7 @@ WORKDIR /opt/robocall/
 #COPY --from=controller_builder . .
 COPY --from=controller_builder /app/main /opt/robocall/main
 COPY --from=controller_builder /app/web/ /opt/robocall/web/
+COPY --from=controller_builder /app/configs/ /opt/robocall/configs/
 #COPY --from=controller_builder /app/pjsip.conf.tmpl /opt/robocall/pjsip.conf.tmpl
-RUN mkdir /opt/robocall/config && echo "{}" > /opt/robocall/config/config.json
+RUN echo "{}" > /opt/robocall/config.json
 CMD ["/opt/robocall/main"]

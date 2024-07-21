@@ -10,6 +10,7 @@ import (
 )
 
 func Router(r *mux.Router, c *conf.Config) {
+	r.Use(loginMiddleware)
 	r.HandleFunc("/user-config", func(w http.ResponseWriter, r *http.Request) {
 		userConfig(w, r, c)
 	}).Methods("POST")
