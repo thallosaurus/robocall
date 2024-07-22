@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/gob"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -17,8 +18,8 @@ type User struct {
 
 func SessionInit() {
 	authKeyOne := securecookie.GenerateRandomKey(64)
-	encryptionKeyOne := securecookie.GenerateRandomKey(32)
-	store = sessions.NewCookieStore(authKeyOne, encryptionKeyOne)
+	//encryptionKeyOne := securecookie.GenerateRandomKey(32)
+	store = sessions.NewCookieStore(authKeyOne)
 
 	store.Options = &sessions.Options{
 		Path:     "/",
@@ -48,6 +49,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, "session")
 	session.Options.MaxAge = -1
 	if err != nil {
+		session.Save(r, w)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -55,20 +57,22 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 func loginMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Do stuff here
+		// Gather Session
 		session, err := store.Get(r, "session")
 		if err != nil {
+			fmt.Print(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		log.Println(&session.Values)
+
+		// Check if a Session exists, if yes continue with the request
 		if session.Values["user"] != nil {
 			log.Println("Logged in: ", r.RequestURI)
 			next.ServeHTTP(w, r)
 		} else {
 			http.Error(w, "not authorized", http.StatusUnauthorized)
 		}
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
 	})
 }

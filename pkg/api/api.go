@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -14,6 +15,20 @@ func Router(r *mux.Router, c *conf.Config) {
 	r.HandleFunc("/user-config", func(w http.ResponseWriter, r *http.Request) {
 		userConfig(w, r, c)
 	}).Methods("POST")
+
+	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
+		b, err := json.Marshal(c)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		w.Write(b)
+	}).Methods("GET")
+
+	r.HandleFunc("/stop", func(w http.ResponseWriter, r *http.Request) {
+		svcctl.StopService()
+		w.Write([]byte("stopping"))
+	}).Methods("GET")
 
 }
 

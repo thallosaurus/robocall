@@ -23,8 +23,17 @@ func notRunning() bool {
 	return errors.Is(err, os.ErrNotExist)
 }
 
-func start(stdout *bytes.Buffer) {
+type SvcSignals = int
+
+const (
+	StartSvc SvcSignals = 0
+	StopSvc  SvcSignals = 1
+)
+
+func start(stdout *bytes.Buffer, ret *chan int) {
 	cmd := exec.Command("asterisk", "-f")
+
+	//cmd.Cancel()
 
 	stdoutpipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -38,14 +47,19 @@ func start(stdout *bytes.Buffer) {
 	}
 
 	for {
+
+		// Read Stdin
 		b := make([]byte, 1024)
 
 		_, err := stdoutpipe.Read(b)
 		if err != nil {
+
+			// Program Closed an Pipe got drained
 			if err.Error() == "EOF" {
 				log.Println("Reached EOF")
 				cmd.Wait()
-				fmt.Println("child process exited")
+				//fmt.Println("child process exited")
+				*ret <- 1
 				break
 			} else {
 				log.Fatal("stdout err ", err)
@@ -60,20 +74,19 @@ func start(stdout *bytes.Buffer) {
 	}
 }
 
-var s = make(chan int)
-
-func RunService() error {
+func RunService() (chan int, error) {
 	if notRunning() {
+		c := make(chan int)
 		var stdout bytes.Buffer
-		go start(&stdout)
+		go start(&stdout, &c)
 
-		return nil
+		return c, nil
 	} else {
 		pid, err := os.ReadFile("/var/run/asterisk.pid")
 		if err != nil {
 			log.Fatal(err)
 		}
-		return fmt.Errorf("asterisk is already running (%s)", string(pid))
+		return nil, fmt.Errorf("asterisk is already running (%s)", string(pid))
 	}
 }
 
@@ -94,8 +107,4 @@ func StopService() {
 
 func ReloadSIPModule() {
 	sendToSocket(ReloadPJSIP)
-	//if !notRunning() {
-	//} else {
-	//log.Fatal("service not running")
-	//}
 }

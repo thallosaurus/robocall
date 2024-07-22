@@ -6,20 +6,26 @@ RUN go mod download && go build -o main cmd/main/main.go
 WORKDIR /app
 
 #CMD ["./main"]
+FROM node:22 as client_builder
+WORKDIR /app
+COPY ./client .
+
+RUN yarn && yarn build
 
 FROM fedora:40
 WORKDIR /asterisk
 RUN curl -o asterisk.tar.gz https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-21.4.0.tar.gz && tar -xzvf asterisk.tar.gz && asterisk-21.4.0/contrib/scripts/install_prereq install
 WORKDIR /asterisk/asterisk-21.4.0
 RUN ./configure && make && make install && make samples
-
 RUN dnf install -y sox
+
 
 WORKDIR /opt/robocall/
 #COPY --from=controller_builder . .
 COPY --from=controller_builder /app/main /opt/robocall/main
 COPY --from=controller_builder /app/web/ /opt/robocall/web/
 COPY --from=controller_builder /app/configs/ /opt/robocall/configs/
+COPY --from=client_builder /app/dist/ /opt/robocall/web/client/
 #COPY --from=controller_builder /app/pjsip.conf.tmpl /opt/robocall/pjsip.conf.tmpl
 RUN echo "{}" > /opt/robocall/config.json
 CMD ["/opt/robocall/main"]

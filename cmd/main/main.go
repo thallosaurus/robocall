@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"text/template"
 
 	"github.com/gorilla/mux"
@@ -40,16 +41,34 @@ func main() {
 	// Initially apply config
 	cnf.ApplyConfig()
 
-	svcctl.RunService()
-	root.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		serveHome(w, r, &cnf)
-	}).Methods("GET")
+	c, err := svcctl.RunService()
 
-	root.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		api.Login(w, r)
-	})
+	if err == nil {
 
-	api.Router(root.PathPrefix("/api").Subrouter(), &cnf)
-	fmt.Println("Listening on port 8080")
-	log.Fatal(http.ListenAndServe("0.0.0.0:8080", root))
+		// Asterisk Child has exited, exit the Parent
+		go func() {
+			if s := <-c; s == 1 {
+				os.Exit(0)
+			}
+		}()
+
+		root.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			serveHome(w, r, &cnf)
+		}).Methods("GET")
+
+		root.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+			api.Login(w, r)
+		})
+
+		root.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+			api.Logout(w, r)
+		}).Methods("GET")
+
+		api.Router(root.PathPrefix("/api").Subrouter(), &cnf)
+		//root.Handle("/", http.FileServer(http.Dir("/opt/robocall/web/client/")))
+		fmt.Println("Listening on port 8080")
+		log.Fatal(http.ListenAndServe("0.0.0.0:8080", root))
+	} else {
+		log.Fatal(err)
+	}
 }
