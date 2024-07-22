@@ -53,6 +53,8 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func loginMiddleware(next http.Handler) http.Handler {
@@ -72,7 +74,8 @@ func loginMiddleware(next http.Handler) http.Handler {
 			log.Println("Logged in: ", r.RequestURI)
 			next.ServeHTTP(w, r)
 		} else {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
+			//http.Error(w, "not authorized", http.StatusUnauthorized)
+			http.Redirect(w, r, "/login", http.StatusFound)
 		}
 	})
 }

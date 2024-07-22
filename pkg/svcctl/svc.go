@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 )
 
 type ServiceControl = string
@@ -30,7 +31,8 @@ const (
 	StopSvc  SvcSignals = 1
 )
 
-func start(stdout *bytes.Buffer, ret *chan int) {
+func start(wg *sync.WaitGroup, stdout *bytes.Buffer, ret *chan int) {
+	defer wg.Done()
 	cmd := exec.Command("asterisk", "-f")
 
 	//cmd.Cancel()
@@ -45,6 +47,8 @@ func start(stdout *bytes.Buffer, ret *chan int) {
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
+
+	wg.Add(1)
 
 	for {
 
@@ -74,11 +78,11 @@ func start(stdout *bytes.Buffer, ret *chan int) {
 	}
 }
 
-func RunService() (chan int, error) {
+func RunService(wg *sync.WaitGroup) (chan int, error) {
 	if notRunning() {
 		c := make(chan int)
 		var stdout bytes.Buffer
-		go start(&stdout, &c)
+		go start(wg, &stdout, &c)
 
 		return c, nil
 	} else {
