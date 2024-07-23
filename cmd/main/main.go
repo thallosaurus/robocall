@@ -27,14 +27,30 @@ func serveLogin(w http.ResponseWriter, _ *http.Request, config *conf.Config) {
 	}
 }
 
-func serveHome(w http.ResponseWriter, _ *http.Request, config *conf.Config) {
-
-	tmpl := template.Must(template.ParseFiles("/opt/robocall/web/tmpl/index.html"))
-
-	err := tmpl.Execute(w, config)
-
+func serveHome(w http.ResponseWriter, r *http.Request, config *conf.Config) {
+	session, err := api.Store.Get(r, "session")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Print(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Println(&session.Values)
+
+	// Check if a Session exists, if yes continue with the request
+	if session.Values["user"] != nil {
+
+		tmpl := template.Must(template.ParseFiles("/opt/robocall/web/tmpl/index.html"))
+
+		err := tmpl.Execute(w, config)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	} else {
+		//http.Error(w, "not authorized", http.StatusUnauthorized)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 }
 
@@ -47,8 +63,8 @@ func SigHandler(sigchnl chan os.Signal) {
 			fmt.Println("Stopping Asterisk...")
 			//os.Exit(0)
 			svcctl.StopService()
-		default:
-			fmt.Println("Ignoring signal: ", signal)
+			//default:
+			//fmt.Println("Ignoring signal: ", signal)
 		}
 	}
 }
@@ -118,7 +134,6 @@ func httpServer(cnf *conf.Config, wg *sync.WaitGroup) *http.Server {
 	}).Methods("GET")
 
 	api.Router(root.PathPrefix("/api").Subrouter(), cnf)
-	//root.Handle("/", http.FileServer(http.Dir("/opt/robocall/web/client/")))
 	fmt.Println("Listening on port 8080")
 
 	go func() {
@@ -127,6 +142,7 @@ func httpServer(cnf *conf.Config, wg *sync.WaitGroup) *http.Server {
 		// always returns error. ErrServerClosed on graceful close
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			// unexpected error. port in use?
+			wg.Done()
 			log.Fatalf("ListenAndServe(): %v", err)
 		}
 	}()

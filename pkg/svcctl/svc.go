@@ -96,7 +96,7 @@ func RunService(wg *sync.WaitGroup) (chan int, error) {
 
 func sendToSocket(ctl ServiceControl) error {
 	//log.Println("Reloading asterisk")
-	cmd := exec.Command("asterisk", "-rx", fmt.Sprintf("%s", ctl))
+	cmd := exec.Command("asterisk", "-rx", ctl)
 	//err := cmd.Run()
 	b, err := cmd.Output()
 

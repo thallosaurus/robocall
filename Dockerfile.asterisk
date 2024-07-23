@@ -12,12 +12,13 @@ COPY ./client .
 
 RUN yarn && yarn build
 
-FROM fedora:40
+FROM linuxcontainers/debian-slim
 WORKDIR /asterisk
+RUN apt-get update && apt-get -y install curl
 RUN curl -o asterisk.tar.gz https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-21.4.0.tar.gz && tar -xzvf asterisk.tar.gz && asterisk-21.4.0/contrib/scripts/install_prereq install
 WORKDIR /asterisk/asterisk-21.4.0
 RUN ./configure && make && make install && make samples
-RUN dnf install -y sox
+RUN apt-get install -y sox
 
 
 WORKDIR /opt/robocall/
@@ -27,5 +28,5 @@ COPY --from=controller_builder /app/web/ /opt/robocall/web/
 COPY --from=controller_builder /app/configs/ /opt/robocall/configs/
 COPY --from=client_builder /app/dist/ /opt/robocall/web/client/
 #COPY --from=controller_builder /app/pjsip.conf.tmpl /opt/robocall/pjsip.conf.tmpl
-RUN echo "{}" > /opt/robocall/config.json
+RUN mkdir /opt/robocall/cnf && echo "{}" > /opt/robocall/cnf/config.json
 CMD ["/opt/robocall/main"]

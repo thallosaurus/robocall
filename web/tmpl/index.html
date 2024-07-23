@@ -1,118 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
-        #extlist li.loading {
-            color: red;
+        .body {
+            display: none;
+        }
+
+        .show {
+            display: block;
+        }
+
+        input[type="radio"]:checked+label {
+            background-color: black;
+            color: white
+        }
+
+        label {
+            cursor: pointer;
+        }
+
+        input[type="radio"]:has(+ label) {
+            display: none;
+        }
+
+        .tab-container {
+            display: inline-grid;
+            grid-auto-flow: column;
         }
     </style>
     <script>
         window.onload = () => {
-            
+
             const tmp_exts = new Map();
             const extform = document.querySelector("#createExtension")
             const upload = document.querySelector("#fileUpload")
-            upload.addEventListener("change", f => {
-                const ext = document.querySelector("#extlist");
-                    for (g of f.target.files) {
-                        const li = document.createElement("li")
-                        //elem.classList.add("")
 
-                        //li.innerText = g.name
-                        li.classList.add("loading")
+            const tabs = document.querySelectorAll("input[type='radio']").forEach(e => {
+                e.addEventListener("change", (e) => {
+                    console.log("changed", e)
 
-                        const p = document.createElement("p")
-                        p.innerText = g.name
+                    document.querySelectorAll("div.body").forEach(f => {
+                        f.classList.remove("show")
+                    })
 
-                        const btn = document.createElement("input")
-                        btn.type = "button"
-                        btn.innerText = "X"
-                        btn.dataset.id = g.name
-                        btn.addEventListener("click", (r) => {
-                            tmp_exts.delete(btn.dataset.id)
-                            ext.removeChild(li)
-                        })
-                        
-                        li.appendChild(p)
-                        li.appendChild(btn)
-
-                        const reader = new FileReader();
-                        reader.addEventListener("loadend", (v) => {
-                            //tmp_exts[g.name] = reader.result
-                            tmp_exts.set(g.name, reader.result)
-                            /*const input = document.createElement("input")
-                            input.type = "hidden"
-                            input.name = "file[]"
-                            input.value = Uint8Array.from(reader.result)*/
-
-                            li.classList.remove("loading")
-                        })
-                        reader.readAsArrayBuffer(g)
-
-                        ext.appendChild(li)
-                    }
+                    let q = document.querySelector("div#" + e.target.dataset.body)
+                    q.classList.add("show")
                 })
-
-            extform.addEventListener("submit", (f) => {
-                f.preventDefault()
-                let data = new FormData();
-                data.append("extension_name", f)
-                for (i of tmp_exts.entries()) {
-                    console.log(i)
-                    data.append(i[0], i[1])
-                }
             })
         }
     </script>
 </head>
+
 <body>
     <h1>RoboCall v1</h1>
+    <a href="/logout">Logout</a>
 
-    <h2>Userconfig</h2>
-    <form action="/api/user-config" method="POST">
-        <label for="gateway-host">Gateway Host</label>
-        <input type="text" name="gateway-host" value="{{ .Sip.Host }}" required>
+    <fieldset>
 
-        <label for="username">Username</label>
-        <input type="text" name="username" value="{{ .Sip.Username }}" required>
+        <div class="tab-container">
+            <input type="radio" name="tab" id="tab-0" checked data-body="body-0">
+            <label for="tab-0">Userconfig</label>
+            <input type="radio" name="tab" id="tab-1" data-body="body-1">
+            <label for="tab-1">Extensions</label>
+        </div>
+        <div class="body show" id="body-0">
+            <h2>Userconfig</h2>
+            <form action="/api/user-config" method="POST">
+                <label for="gateway-host">Gateway Host</label>
+                <input type="text" name="gateway-host" value="{{ .Sip.Host }}" required>
 
-        <label for="password">Password</label>
-        <input type="password" name="password" required>
-        <input type="submit">
+                <label for="username">Username</label>
+                <input type="text" name="username" value="{{ .Sip.Username }}" required>
+
+                <label for="password">Password</label>
+                <input type="password" name="password" required>
+                <input type="submit">
+            </form>
+        </div>
+
+        <div class="body" id="body-1">
+            <h2>Extensions</h2>
+            <form action="/api/set-extension" method="POST">
+
+                <fieldset {{if not .ExtConfig }}disabled{{end}}>
+                    <legend>Selected Extension</legend>
+                    <select>
+                        {{if .ExtConfig }}
+                        {{ range $e := .Ext }}
+                        <option>Option</option>
+                        {{end}}
+                        {{else}}
+                        <option selected>-- no extensions available --</option>
+                        {{end}}
+                    </select>
+                    <input type="submit">
+                </fieldset>
+            </form>
+
+            <form action="/api/create-extension" method="POST">
+                <fieldset {{if not .Samples }}disabled{{end}}>
+                    <legend>Create Extension</legend>
+                    <select>
+                        {{if .Samples }}
+                        {{ range $e := .Samples }}
+                        <option>{{ $e.SoundName }}</option>
+                        {{end}}
+                        {{else}}
+                        <option selected>-- no samples available --</option>
+                        {{end}}
+                    </select>
+                    <input type="submit">
+                </fieldset>
+            </form>
+
+            <form action="/api/upload-sample" method="POST" id="createExtension" enctype="multipart/form-data">
+                <fieldset>
+                    <legend>Upload Samples</legend>
+                    <label for="name">Filename</label>
+                    <input name="name" id="name">
+                    <input type="file" name="sample">
+                    <input type="submit">
+                </fieldset>
+    </fieldset>
     </form>
+    </div>
+    </fieldset>
 
-    <h2>Extensions</h2>
-    <form action="/api/set-extension" method="POST">
-
-        <fieldset {{if not .ExtConfig }}disabled{{end}}>
-            <legend>Selected Extension</legend>
-            <select>
-                {{if .ExtConfig }}
-                {{ range $e := .Ext }}
-                <option>Option</option>
-                {{end}}
-                {{else}}
-                <option selected>-- no extensions available --</option>
-                {{end}}
-            </select>
-            <input type="submit">
-        </fieldset>
-    </form>
-    
-    <form action="/api/create-extension" method="POST" id="createExtension">
-        <fieldset>
-            <legend>Create Extension</legend>
-            <label for="name">Extension Name</label>
-            <input name="name">
-            <ol id="extlist">
-                
-            </ol>
-            <input type="file" id="fileUpload">
-            <input type="submit">
-        </fieldset>
-    </form>
 </body>
+
 </html>

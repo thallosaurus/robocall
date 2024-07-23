@@ -12,6 +12,7 @@ import (
 type Config struct {
 	Sip       PjsipConfig
 	ExtConfig []ExtConfig
+	Samples   []SampleEntry
 }
 
 type PjsipConfig struct {
@@ -36,11 +37,11 @@ func (c *Config) ToFile(path string) error {
 }
 
 func FromDefaultFile() Config {
-	return FromFile("/opt/robocall/config.json")
+	return FromFile("/opt/robocall/cnf/config.json")
 }
 
 func (c *Config) ToDefaultFile() {
-	if err := c.ToFile("/opt/robocall/config.json"); err != nil {
+	if err := c.ToFile("/opt/robocall/cnf/config.json"); err != nil {
 		log.Fatal(err)
 	}
 }

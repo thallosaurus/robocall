@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-var store *sessions.CookieStore
+var Store *sessions.CookieStore
 
 type User struct {
 	Id int
@@ -19,10 +19,11 @@ type User struct {
 func SessionInit() {
 	authKeyOne := securecookie.GenerateRandomKey(64)
 	//encryptionKeyOne := securecookie.GenerateRandomKey(32)
-	store = sessions.NewCookieStore(authKeyOne)
+	Store = sessions.NewCookieStore(authKeyOne)
 
-	store.Options = &sessions.Options{
+	Store.Options = &sessions.Options{
 		Path:     "/",
+		MaxAge:   60 * 60,
 		SameSite: http.SameSiteLaxMode,
 	}
 
@@ -30,7 +31,7 @@ func SessionInit() {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	session, _ := store.Get(r, "session")
+	session, _ := Store.Get(r, "session")
 	session.Values["user"] = User{
 		Id: 0,
 	}
@@ -46,13 +47,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "session")
-	session.Options.MaxAge = -1
+	session, err := Store.Get(r, "session")
 	if err != nil {
-		session.Save(r, w)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	session.Options.MaxAge = -1
+	session.Save(r, w)
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -60,7 +62,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 func loginMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Gather Session
-		session, err := store.Get(r, "session")
+		session, err := Store.Get(r, "session")
 		if err != nil {
 			fmt.Print(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
