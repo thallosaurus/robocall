@@ -8,7 +8,7 @@ import (
 
 type SampleEntry struct {
 	SoundName string
-	File      *os.File
+	file      *os.File
 }
 
 func FromSoundName(name string) SampleEntry {
@@ -18,6 +18,6 @@ func FromSoundName(name string) SampleEntry {
 	}
 	return SampleEntry{
 		SoundName: name,
-		File:      file,
+		file:      file,
 	}
 }

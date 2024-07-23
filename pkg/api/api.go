@@ -103,10 +103,7 @@ func uploadSample(w http.ResponseWriter, r *http.Request, c *conf.Config) {
 
 	io.Copy(dest, data)
 
-	c.Samples = append(c.Samples, conf.SampleEntry{
-		SoundName: target_name,
-		File:      dest,
-	})
+	c.Samples = append(c.Samples, conf.FromSoundName(target_name))
 	c.ToDefaultFile()
 
 	http.Redirect(w, r, "/", http.StatusFound)

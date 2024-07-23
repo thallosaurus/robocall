@@ -21,8 +21,11 @@ func ConvertToGSM(filename string, d []byte) (*os.File, error) {
 
 	io.Copy(input_file, bytes.NewBuffer(d))
 
-	fname_out := fmt.Sprintf("/tmp/%s-%s.gsm", string(time.Now().Unix()))
+	fname_out := fmt.Sprintf("/tmp/%s-%s.gsm", string(time.Now().Unix()), filename)
 	output_file, err := os.Create(fname_out)
+	if err != nil {
+		return nil, err
+	}
 
 	cmd := exec.Command("sox", "-r", "8000", input_file.Name(), output_file.Name())
 	stdoutpipe, err := cmd.StdoutPipe()
